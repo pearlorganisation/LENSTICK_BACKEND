@@ -13,6 +13,7 @@ const getAllowedOrigins = () => {
   }
 };
 
+
 const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = getAllowedOrigins();

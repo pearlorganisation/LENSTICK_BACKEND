@@ -9,8 +9,7 @@ import OTP from "./otp.model.js";
 import { sendOtpEmail } from "../../common/utils/commonService/mail.service.js";
 import { sendOtpSMS } from "../../common/utils/commonService/sms.service.js";
 import ms from "ms";
-
-// import MongooseService from "../../utils/commonService/mogoose.service.js";
+import MongooseService from "../../common/utils/commonService/mogoose.service.js";
 
 class AuthController {
   static register = asyncHandler(async (req, res) => {
@@ -67,6 +66,7 @@ class AuthController {
         200
       );
     }
+
     const result = await UserService.register({
       firstName,
       lastName,
@@ -167,6 +167,96 @@ class AuthController {
       "OTP verified successfully!",
       200
     );
+  });
+
+  static login = asyncHandler(async (req, res) => {
+    const { email, phoneNumber } = req.body;
+
+    if (!email && !phoneNumber) {
+      throw new CustomError("Email or phone number is required", 400);
+    }
+
+    // find user
+    const userResult = email
+      ? await UserService.findByEmail(email)
+      : await UserService.findByPhoneNumber(phoneNumber);
+
+    const user = userResult?.data?.user;
+
+    if (!user) {
+      throw new CustomError("User not found", 404);
+    }
+
+    const otp = generateOTP();
+
+    // save OTP
+    await OTP.findOneAndUpdate(
+      email ? { email, type: "LOGIN" } : { phoneNumber, type: "LOGIN" },
+      {
+        otp,
+        createdAt: new Date(),
+      },
+      { upsert: true, new: true }
+    );
+
+    // send OTP
+    if (email) await sendOtpEmail(user.firstName, email, otp, "LOGIN");
+    if (phoneNumber) await sendOtpSMS(phoneNumber, otp);
+
+    return successResponse(res, null, "OTP sent successfully", 200);
+  });
+
+  static logout = asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    // await redis.del(`refresh:${userId}`);
+
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+    successResponse(res, null, "Logged out successfully", 200);
+  });
+
+  static refreshToken = asyncHandler(async (req, res) => {
+    const { refreshToken } = req.cookies;
+    const userId = req.user.id;
+
+    // const redisToken = await redis.get(`refresh:${userId}`);
+
+    // if (!redisToken || redisToken !== refreshToken) {
+    //   throw new CustomError("Invalid refresh token", 401);
+    // }
+
+    const userResult = await UserService.findById(userId);
+
+    if (!userResult.success) {
+      throw new CustomError("Invalid Details", 401);
+    }
+
+    userResult.data.user = MongooseService.cleanObject(userResult.data.user);
+
+    const tokens = JwtService.generateTokens(userResult.data.user);
+
+    // await redis.set(
+    //   `refresh:${userId}`,
+    //   tokens.refreshToken,
+    //   "EX",
+    //   ms(process.env.JWT_REFRESH_EXPIRATION) / 1000
+    // );
+
+    res.cookie("accessToken", tokens.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: ms(process.env.JWT_ACCESS_EXPIRATION),
+    });
+
+    res.cookie("refreshToken", tokens.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: ms(process.env.JWT_REFRESH_EXPIRATION),
+    });
+
+    successResponse(res, userResult.data, "Token refreshed successfully", 200);
   });
 }
 

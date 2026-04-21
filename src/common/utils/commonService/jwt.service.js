@@ -5,11 +5,11 @@ class JwtService {
   static generateTokens(user) {
     const payload = {
       id: user._id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
       role: user.role,
+      email: user.email || null,
+      phoneNumber: user.phoneNumber || null,
     };
+    
     const accessToken = jwt.sign(payload, process.env.JWT_ACCESS_SECRET, {
       expiresIn: process.env.JWT_ACCESS_EXPIRATION,
     });

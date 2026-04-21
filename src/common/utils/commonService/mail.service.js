@@ -18,17 +18,27 @@ export const sendEmail = async (to, subject, html) => {
 };
 
 export const sendOtpEmail = async (name, email, otp, type = "REGISTER") => {
-  const subject =
-    type === "REGISTER"
-      ? "Verify your email"
-      : "Password reset verification code";
+  const typeMessages = {
+    REGISTER: {
+      subject: "Verify your email for registration",
+      title: "registration",
+    },
+    LOGIN: {
+      subject: "Login verification code",
+      title: "login",
+    },
+    RESET_PASSWORD: {
+      subject: "Password reset verification code",
+      title: "password reset",
+    },
+  };
+
+  const current = typeMessages[type] || typeMessages.REGISTER;
 
   const html = `
       <div style="font-family:Arial;padding:20px;">
         <h2>Hi ${name},</h2>
-        <p>Your ${
-          type === "REGISTER" ? "registration" : "password reset"
-        } OTP is:</p>
+        <p>Your ${current.title} OTP is:</p>
         <h1 style="letter-spacing:5px;color:#4F46E5;">${otp}</h1>
         <p>This OTP is valid for 5 minutes.</p>
         <p style="font-size:12px;color:#666;">
@@ -39,5 +49,5 @@ export const sendOtpEmail = async (name, email, otp, type = "REGISTER") => {
       </div>
     `;
 
-  return sendEmail(email, subject, html);
+  return sendEmail(email, current.subject, html);
 };

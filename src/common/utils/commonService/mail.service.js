@@ -1,9 +1,9 @@
-import transporter from "../../../config/nodemailer";
+import transporter from "../../../config/nodemailer.js";
 
 export const sendEmail = async (to, subject, html) => {
   try {
     const info = await transporter.sendMail({
-      from: `"LENSTICK" <${process.env.NODEMAILER_EMAIL_USER}>`,
+      from: `"LENSTICK" <${process.env.SMTP_USER}>`,
       to,
       subject,
       html,
@@ -26,10 +26,6 @@ export const sendOtpEmail = async (name, email, otp, type = "REGISTER") => {
     LOGIN: {
       subject: "Login verification code",
       title: "login",
-    },
-    RESET_PASSWORD: {
-      subject: "Password reset verification code",
-      title: "password reset",
     },
   };
 

@@ -1,5 +1,4 @@
 import User from "./user.model.js";
-import BcryptService from "../../common/utils/commonService/bcrypt.service.js";
 
 const isDev = () => process.env.NODE_ENV === "development";
 
@@ -84,28 +83,6 @@ class UserService {
         success: true,
         message: "Account created. Please verify OTP.",
         data: { user },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: isDev() ? error.message : "Internal Server Error",
-        data: null,
-      };
-    }
-  }
-
-  // 🔐 Login user
-  static async login({ password, hashPassword }) {
-    try {
-      const isMatch = await BcryptService.compareValue(password, hashPassword);
-      if (!isMatch) {
-        return { success: false, message: "Invalid credentials", data: null };
-      }
-
-      return {
-        success: true,
-        message: "Login successful",
-        data: {},
       };
     } catch (error) {
       return {

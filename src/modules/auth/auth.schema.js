@@ -16,3 +16,5 @@ class authSchema {
       path: ["email"],
     });
 }
+
+export default authSchema;

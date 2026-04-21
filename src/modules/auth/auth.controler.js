@@ -48,12 +48,18 @@ class AuthController {
 
       // resend OTP
       await OTP.findOneAndUpdate(
-        { email, phoneNumber, type: "REGISTER" },
+        {
+          $or: [{ email }, { phoneNumber }],
+          type: "REGISTER",
+        },
         {
           otp,
-          createdAt: new Date(), // reset expiry timer
+          createdAt: new Date(),
         },
-        { upsert: true, new: true }
+        {
+          upsert: true,
+          new: true,
+        }
       );
 
       if (email) await sendOtpEmail(`${firstName}`, email, otp);

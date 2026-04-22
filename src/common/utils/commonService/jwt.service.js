@@ -9,7 +9,7 @@ class JwtService {
       email: user.email || null,
       phoneNumber: user.phoneNumber || null,
     };
-    
+
     const accessToken = jwt.sign(payload, process.env.JWT_ACCESS_SECRET, {
       expiresIn: process.env.JWT_ACCESS_EXPIRATION,
     });

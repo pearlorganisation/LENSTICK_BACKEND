@@ -10,8 +10,11 @@ import { sendOtpEmail } from "../../common/utils/commonService/mail.service.js";
 import { sendOtpSMS } from "../../common/utils/commonService/sms.service.js";
 import ms from "ms";
 import MongooseService from "../../common/utils/commonService/mogoose.service.js";
+import verifyGoogleToken from "./google.service.js";
+import { googleAuthService } from "./auth.service.js";
 
 class AuthController {
+  
   static register = asyncHandler(async (req, res) => {
     const {
       firstName,
@@ -264,6 +267,33 @@ class AuthController {
 
     successResponse(res, userResult.data, "Token refreshed successfully", 200);
   });
+
+  static googleAuthController = async (req, res) => {
+    const { token } = req.body;
+
+    if (!token) {
+      throw new CustomError("Google token is required", 400);
+    }
+
+    const { user, tokens } = await googleAuthService(token);
+
+    res.cookie("accessToken", tokens.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: ms(process.env.JWT_ACCESS_EXPIRATION),
+    });
+
+    res.cookie("refreshToken", tokens.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: ms(process.env.JWT_REFRESH_EXPIRATION),
+    });
+
+    // Success response
+    return successResponse(res, user, "Google authentication successful", 200);
+  };
 }
 
 export default AuthController;

@@ -15,6 +15,16 @@ class authSchema {
       message: "Either email or phone number is required",
       path: ["email"],
     });
+
+  static login = z
+    .object({
+      email: z.string().email().optional(),
+      phoneNumber: z.string().min(10).max(15).optional(),
+    })
+    .refine((data) => data.email || data.phoneNumber, {
+      message: "Either email or phone number is required",
+      path: ["email"],
+    });
 }
 
 export default authSchema;

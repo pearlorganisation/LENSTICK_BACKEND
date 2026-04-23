@@ -8,6 +8,7 @@ import corsConfig from "./config/corsConfig.js";
 import routes from "./routes.js";
 import { connectRedis } from "./config/redis.js";
 import redis from "./config/redis.js";
+import connectToMongoDB from "./config/db.js";
 
 const app = express();
 
@@ -21,6 +22,8 @@ const app = express();
 // };
 
 // startServer();
+
+connectToMongoDB();
 
 app.use(morgan("dev"));
 app.use(corsConfig);

@@ -14,7 +14,6 @@ import verifyGoogleToken from "./google.service.js";
 import { googleAuthService } from "./auth.service.js";
 
 class AuthController {
-  
   static register = asyncHandler(async (req, res) => {
     const {
       firstName,

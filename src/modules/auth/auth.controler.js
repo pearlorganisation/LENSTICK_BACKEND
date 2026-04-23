@@ -268,7 +268,10 @@ class AuthController {
   });
 
   static googleAuthController = async (req, res) => {
+    console.log("welcome to google auth ");
     const { token } = req.body;
+
+    console.log("token form frontend ", token);
 
     if (!token) {
       throw new CustomError("Google token is required", 400);

@@ -277,7 +277,10 @@ class AuthController {
       throw new CustomError("Google token is required", 400);
     }
 
-    const { user, tokens } = await googleAuthService(token);
+    const result = await googleAuthService(token);
+    const { user, tokens } = result.data;
+
+    console.log("user and token ", user, tokens);
 
     res.cookie("accessToken", tokens.accessToken, {
       httpOnly: true,

@@ -8,18 +8,26 @@ export const googleAuthService = async (token) => {
 
   const { email, sub, email_verified } = payload;
 
+  console.log("payload ", payload);
+
+  console.log("email sub , verified ", email, sub, email_verified);
+
   if (!email_verified) {
     throw new CustomError("Email not verified by Google", 400);
   }
 
   let user = await UserService.findByEmail(email);
 
+  console.log("user after fine by  ", user);
+
   //  REGISTER FLOW
-  if (!user) {
+  if (!user?.data) {
     const firstName = payload.given_name || name?.split(" ")[0] || "User";
 
     const lastName =
       payload.family_name || name?.split(" ").slice(1).join(" ") || "";
+
+    console.log("regist service call ");
 
     const registerResult = await UserService.register({
       firstName,
@@ -28,6 +36,8 @@ export const googleAuthService = async (token) => {
       phoneNumber: null,
       role: "CUSTOMER",
     });
+
+    console.log("register  result  ", registerResult);
 
     if (!registerResult.success) {
       throw new CustomError(registerResult.message, 400);
@@ -44,6 +54,8 @@ export const googleAuthService = async (token) => {
 
   // ✅ LOGIN FLOW (for both new + existing user)
   const tokens = JwtService.generateTokens(user);
+
+  console.log("tokens ", tokens);
 
   return {
     data: {

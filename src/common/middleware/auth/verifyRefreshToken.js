@@ -12,13 +12,15 @@ const verifyRefreshToken = (req, res, next) => {
     }
 
     // Verify token using JwtService
-    const decoded = JwtService.verifyToken(token, process.env.JWT_REFRESH_SECRET);
+    const decoded = JwtService.verifyToken(
+      token,
+      process.env.JWT_REFRESH_SECRET
+    );
 
     if (!decoded) {
       throw new CustomError("Invalid or expired refresh token", 401);
     }
 
-    
     req.user = decoded;
     next();
   } catch (error) {

@@ -25,6 +25,23 @@ class authSchema {
       message: "Either email or phone number is required",
       path: ["email"],
     });
+
+  static verifyOtp = z
+    .object({
+      email: z.string().email().optional(),
+      phoneNumber: z.string().min(10).max(15).optional(),
+
+      otp: z.string().min(4).max(8),
+
+      type: z
+        .enum(["REGISTER", "LOGIN", "FORGOT_PASSWORD"])
+        .optional()
+        .default("REGISTER"),
+    })
+    .refine((data) => data.email || data.phoneNumber, {
+      message: "Either email or phone number is required",
+      path: ["email"],
+    });
 }
 
 export default authSchema;

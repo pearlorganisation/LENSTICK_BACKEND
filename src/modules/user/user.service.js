@@ -26,6 +26,8 @@ class UserService {
     try {
       const user = await User.findOne({ email });
 
+      console.log("user in findby id ", user);
+
       if (!user) {
         return { success: false, message: "User not found", data: null };
       }
@@ -69,6 +71,7 @@ class UserService {
 
   // 📝 Register new user
   static async register(data) {
+    console.log("data in register ", data);
     try {
       const user = await User.create({
         firstName: data.firstName,
@@ -78,6 +81,8 @@ class UserService {
         role: data.role,
         isVerified: false,
       });
+
+      console.log("user after regsitation ", user);
 
       return {
         success: true,

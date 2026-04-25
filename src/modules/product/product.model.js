@@ -95,12 +95,6 @@ const productSchema = new mongoose.Schema(
       trim: true,
     },
 
-    gender: {
-      type: String,
-      enum: ["men", "women", "unisex", "kids"],
-      lowercase: true,
-    },
-
     colors: {
       type: [String],
       required: [true, "At least one color is required"],
@@ -143,9 +137,8 @@ const productSchema = new mongoose.Schema(
 
     // 🏷️ Collection
     collection: {
-      type: String,
-      enum: ["casual", "sports", "premium", "trending"],
-      lowercase: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Collection",
     },
 
     rating: {
@@ -154,6 +147,8 @@ const productSchema = new mongoose.Schema(
       min: 0,
       max: 5,
     },
+
+    gender: { type: String, enum: ["male", "female", "unisex"] },
 
     numReviews: {
       type: Number,

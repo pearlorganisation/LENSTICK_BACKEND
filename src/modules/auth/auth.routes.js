@@ -4,6 +4,7 @@ const router = express.Router();
 import AuthController from "./auth.controler.js";
 import validateBody from "../../common/middleware/parseJOI/validateBody.js";
 import authSchema from "./auth.schema.js"; // fix path if needed
+import isAuthenticated from "../../common/middleware/auth/isAuthenticated.js";
 
 router.post(
   "/register",
@@ -11,7 +12,7 @@ router.post(
   AuthController.register
 );
 
-router.post("/login", validateBody(authSchema.login), AuthController.login);
+// validateBody(authSchema.verifyOtp)
 
 router.post(
   "/verify-otp",
@@ -19,7 +20,9 @@ router.post(
   AuthController.verifyOtp
 );
 
-router.post("/refresh-token", AuthController.refreshToken);
+router.post("/login", validateBody(authSchema.login), AuthController.login);
+router.post("/refresh-token", isAuthenticated, AuthController.refreshToken);
+router.post("/logout", isAuthenticated, AuthController.logout);
 
 //Google Auth
 router.post("/google", AuthController.googleAuthController);

@@ -49,19 +49,23 @@ class AuthController {
         throw new CustomError("User already exists!", 400);
       }
 
-      // resend OTP
+      console.log("email for register", email);
+
       await OTP.findOneAndUpdate(
         {
           $or: [{ email }, { phoneNumber }],
           type: "REGISTER",
         },
         {
+          email,
+          phoneNumber,
           otp,
+          type: "REGISTER",
           createdAt: new Date(),
         },
         {
           upsert: true,
-          new: true,
+          returnDocument: "after",
         }
       );
 
@@ -102,6 +106,8 @@ class AuthController {
   });
 
   static verifyOtp = asyncHandler(async (req, res) => {
+    console.log("verify dta ", req.body);
+
     const { email, phoneNumber, otp, type = "REGISTER" } = req.body;
 
     if ((!email && !phoneNumber) || !otp || !type) {
@@ -130,18 +136,18 @@ class AuthController {
       throw new CustomError("User not found", 400);
     }
 
-    if (otpRecord.type === "FORGOT_PASSWORD") {
-      await OTP.deleteOne(query);
+    // if (otpRecord.type === "FORGOT_PASSWORD") {
+    //   await OTP.deleteOne(query);
 
-      return successResponse(
-        res,
-        null,
-        "OTP verified successfully. You can now reset your password.",
-        200
-      );
-    }
+    //   return successResponse(
+    //     res,
+    //     null,
+    //     "OTP verified successfully. You can now reset your password.",
+    //     200
+    //   );
+    // }
 
-    if (user.isVerified) {
+    if (type == "REGISTER" && user.isVerified) {
       // If somehow verified but OTP existed, just clean up
       await OTP.deleteOne({ email, phoneNumber, type });
       throw new CustomError("User already verified", 400);
@@ -216,6 +222,7 @@ class AuthController {
   });
 
   static logout = asyncHandler(async (req, res) => {
+    console.log("user ", req.user);
     const userId = req.user.id;
     // await redis.del(`refresh:${userId}`);
 
@@ -270,6 +277,7 @@ class AuthController {
 
   static googleAuthController = async (req, res) => {
     console.log("welcome to google auth ");
+
     const { token } = req.body;
 
     console.log("token form frontend ", token);

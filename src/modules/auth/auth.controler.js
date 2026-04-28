@@ -324,6 +324,8 @@ class AuthController {
     // Success response
     return successResponse(res, user, "Google authentication successful", 200);
   };
+
+  
 }
 
 export default AuthController;

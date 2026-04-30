@@ -8,6 +8,9 @@ const getAllowedOrigins = () => {
       "http://localhost:5173",
       "http://localhost:3000",
       "http://localhost:5174",
+      "https://lenstick-frontend-admin.vercel.app",
+      "https://lens-stick.vercel.app",
+      "https://lenstick-frontend-admin-ui8w.vercel.app"
     ];
   } else {
     return [

@@ -5,9 +5,12 @@ const isDev = () => process.env.NODE_ENV === "development";
 const getAllowedOrigins = () => {
   if (isDev()) {
     return [
-      "http://localhost:5173",
+     
       "http://localhost:3000",
-      "http://localhost:5174",
+      
+      "https://lenstick-frontend-admin-ui8w.vercel.app",
+      "https://lens-stick.vercel.app",
+      "https://lenstick-frontend-admin.vercel.app"
     ];
   } else {
     return [
@@ -31,7 +34,7 @@ const corsOptions = {
     }
   },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  credentials: "include",
+  credentials: true,
 };
 
 export default cors(corsOptions);

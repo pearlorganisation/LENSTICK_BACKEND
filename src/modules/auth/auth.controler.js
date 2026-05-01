@@ -50,22 +50,6 @@ class AuthController {
 
       console.log("email for register", email);
 
-      // resend OTP
-      // await OTP.findOneAndUpdate(
-      //   {
-      //     $or: [{ email }, { phoneNumber }],
-      //     type: "REGISTER",
-      //   },
-      //   {
-      //     otp,
-      //     createdAt: new Date(),
-      //   },
-      //   {
-      //     upsert: true,
-      //     returnDocument: "after",
-      //   }
-      // );
-
       await OTP.findOneAndUpdate(
         {
           $or: [{ email }, { phoneNumber }],
@@ -121,7 +105,6 @@ class AuthController {
   });
 
   static verifyOtp = asyncHandler(async (req, res) => {
-    
     console.log("verify dta ", req.body);
 
     const { email, phoneNumber, otp, type = "REGISTER" } = req.body;
@@ -324,8 +307,6 @@ class AuthController {
     // Success response
     return successResponse(res, user, "Google authentication successful", 200);
   };
-
-  
 }
 
 export default AuthController;

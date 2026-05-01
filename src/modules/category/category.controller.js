@@ -5,8 +5,6 @@ import { createCategoryValidation } from "./category.validation.js";
 
 export const createCategory = async (req, res) => {
   try {
-
-  
     const { error } = createCategoryValidation.validate(req.body);
 
     if (error) {
@@ -24,18 +22,13 @@ export const createCategory = async (req, res) => {
       message: "Category created successfully",
       data: result,
     });
-
   } catch (error) {
-
     return res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
-
-
 
 // category.controller.js
 
@@ -44,12 +37,9 @@ import {
   getSingleCategoryService,
 } from "./category.service.js";
 
-
 // GET ALL CATEGORIES
 export const getAllCategories = async (req, res) => {
-
   try {
-
     const result = await getAllCategoriesService();
 
     return res.status(200).json({
@@ -57,41 +47,28 @@ export const getAllCategories = async (req, res) => {
       message: "Categories fetched successfully",
       data: result,
     });
-
   } catch (error) {
-
     return res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
-
 };
-
 
 // GET SINGLE CATEGORY
 export const getSingleCategory = async (req, res) => {
-
   try {
-
-    const result = await getSingleCategoryService(
-      req.params.id
-    );
+    const result = await getSingleCategoryService(req.params.id);
 
     return res.status(200).json({
       success: true,
       message: "Category fetched successfully",
       data: result,
     });
-
   } catch (error) {
-
     return res.status(404).json({
       success: false,
       message: error.message,
     });
-
   }
-
 };

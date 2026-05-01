@@ -1,8 +1,37 @@
+// routes/product.routes.js
+
 import express from "express";
+import {
+  createProduct,
+  deleteProduct,
+  getAllProducts,
+  getProductFilters,
+  getSingleProduct,
+  updateProduct,
+  updateVariantStock,
+} from "./product.controller.js";
 import { upload } from "../../common/middleware/upload.middleware.js";
 import S3Service from "../../common/utils/commonService/awsS3.service.js";
 
 const router = express.Router();
+
+router.post("/create", createProduct);
+
+router.get("/all", getAllProducts);
+
+router.get("/filters", getProductFilters);
+
+router.get("/:id", getSingleProduct);
+
+router.put("/update/:id", updateProduct);
+
+router.delete("/delete/:id", deleteProduct);
+
+router.put("/update-stock/:productId/:variantId", updateVariantStock);
+
+// export default router;
+
+// const router = express.Router();
 
 //  1. Upload files
 router.post("/upload", upload.array("files", 5), (req, res) => {

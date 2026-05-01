@@ -3,6 +3,8 @@ import { s3 } from "./s3.util.js";
 import CustomError from "../customError.js";
 
 class S3Service {
+
+  
   static getKeyFromUrl(url) {
     if (!url) throw new CustomError("URL is required", 400);
     return url.split(".com/")[1];

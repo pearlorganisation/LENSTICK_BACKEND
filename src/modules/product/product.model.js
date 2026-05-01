@@ -1,39 +1,151 @@
 import mongoose from "mongoose";
 
+/* =========================
+   VARIANT SCHEMA
+========================= */
+
 const variantSchema = new mongoose.Schema(
   {
-    frameSize: {
+    // Unique SKU for inventory management
+    sku: {
       type: String,
-      enum: ["XS", "S", "M", "L", "XL"], // fixed → keep enum
+      required: true,
+      unique: true,
+      trim: true,
     },
 
+    /* =========================
+       VARIANT ATTRIBUTES
+    ========================= */
+
+    // Example: Matte Black, Blue, Brown
     color: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Color", // dynamic (admin controlled)
+      type: String,
       required: true,
+      trim: true,
     },
+
+    // Example: Matte_Black_with_Gold
+    frameColor: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    // Example: Small, Medium, Large
+    size: {
+      type: String,
+      enum: ["EXTRA SMALL", "SMALL", "MEDIUM", "LARGE", "EXTRA LARGE"],
+    },
+
+    // Example: 2-5 YEARS
+    ageGroup: {
+      type: String,
+      trim: true,
+    },
+
+    /* =========================
+       PRICING
+    ========================= */
 
     price: {
       type: Number,
       required: true,
     },
 
-    stock: {
+    salePrice: {
+      type: Number,
+    },
+
+    discountPercentage: {
       type: Number,
       default: 0,
     },
 
-    images: [String],
+    /* =========================
+       STOCK MANAGEMENT
+    ========================= */
+
+    stock: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+
+    sold: {
+      type: Number,
+      default: 0,
+    },
+
+    /* =========================
+       VARIANT IMAGES
+    ========================= */
+
+    images: [
+      {
+        url: String,
+        public_id: String,
+      },
+    ],
+
+    /* =========================
+       FLAGS
+    ========================= */
+
+    isTryOnAvailable: {
+      type: Boolean,
+      default: false,
+    },
+
+    isBuyOneGetOne: {
+      type: Boolean,
+      default: false,
+    },
+
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
-  { _id: true },
+  {
+    timestamps: true,
+  }
 );
+
+/* =========================
+   MAIN PRODUCT SCHEMA
+========================= */
 
 const productSchema = new mongoose.Schema(
   {
-    title: {
+    /* =========================
+       BASIC INFORMATION
+    ========================= */
+
+    name: {
       type: String,
       required: true,
+      trim: true,
     },
+
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+    },
+
+    description: {
+      type: String,
+    },
+
+    shortDescription: {
+      type: String,
+    },
+
+    /* =========================
+       CATEGORY
+    ========================= */
 
     category: {
       type: mongoose.Schema.Types.ObjectId,
@@ -41,49 +153,173 @@ const productSchema = new mongoose.Schema(
       required: true,
     },
 
-    // ✅ admin controlled modules
-    brand: {
+    subCategory: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Brand",
+      ref: "SubCategory",
     },
 
-    productType: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "ProductType",
-    },
+    /* =========================
+       PRODUCT FILTERS
+    ========================= */
 
-    collection: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Collection",
-    },
-
-    // ✅ fixed → enum is fine
     gender: [
       {
         type: String,
-        enum: ["men", "women", "kids", "unisex"],
+        enum: ["Men", "Women", "Kids"],
       },
     ],
 
-    // can later convert if needed
-    attributes: {
-      frameShape: { type: ObjectId, ref: "FrameShape" },
-      frameType: { type: ObjectId, ref: "FrameType" },
-      frameMaterial: { type: ObjectId, ref: "FrameMaterial" },
-      ageGroup: String,
+    productType: {
+      type: String,
+      trim: true,
     },
+
+    frameShape: {
+      type: String,
+      trim: true,
+    },
+
+    frameType: {
+      type: String,
+      trim: true,
+    },
+
+    frameMaterial: {
+      type: String,
+      trim: true,
+    },
+
+    collection: {
+      type: String,
+      trim: true,
+    },
+
+    brand: {
+      type: String,
+      trim: true,
+    },
+
+    /* =========================
+       PRODUCT TAGS
+    ========================= */
+
+    tags: [String],
+
+    /* =========================
+       FEATURES
+    ========================= */
+
+    features: [String],
+
+    /* =========================
+       VARIANTS
+    ========================= */
 
     variants: [variantSchema],
 
-    // helpful for sorting/filter
-    basePrice: Number,
+    /* =========================
+       SEO
+    ========================= */
+
+    metaTitle: {
+      type: String,
+    },
+
+    metaDescription: {
+      type: String,
+    },
+
+    metaKeywords: [String],
+
+    /* =========================
+       RATINGS
+    ========================= */
+
+    averageRating: {
+      type: Number,
+      default: 0,
+    },
+
+    totalReviews: {
+      type: Number,
+      default: 0,
+    },
+
+    /* =========================
+       PRODUCT STATUS
+    ========================= */
+
+    isFeatured: {
+      type: Boolean,
+      default: false,
+    },
+
+    isBestSeller: {
+      type: Boolean,
+      default: false,
+    },
+
+    isNewArrival: {
+      type: Boolean,
+      default: false,
+    },
 
     isActive: {
       type: Boolean,
       default: true,
     },
+
+    /* =========================
+       TOTAL STOCK
+       (AUTO CALCULATED)
+    ========================= */
+
+    totalStock: {
+      type: Number,
+      default: 0,
+    },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+  }
 );
 
-export default mongoose.model("Product", productSchema);
+/* =========================
+   AUTO CALCULATE TOTAL STOCK
+========================= */
+
+productSchema.pre("save", function (next) {
+  let total = 0;
+
+  this.variants.forEach((variant) => {
+    total += variant.stock;
+  });
+
+  this.totalStock = total;
+
+  next();
+});
+
+/* =========================
+   INDEXING
+========================= */
+
+productSchema.index({ name: "text" });
+
+productSchema.index({ category: 1 });
+
+productSchema.index({ brand: 1 });
+
+productSchema.index({ frameShape: 1 });
+
+productSchema.index({ frameMaterial: 1 });
+
+productSchema.index({ gender: 1 });
+
+/* =========================
+   EXPORT
+========================= */
+
+const Product = mongoose.model("Product", productSchema);
+
+export default Product;

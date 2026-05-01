@@ -31,7 +31,7 @@ const corsOptions = {
     }
   },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  credentials: true,
+  credentials: "include",
 };
 
 export default cors(corsOptions);

@@ -1,35 +1,44 @@
 import mongoose from "mongoose";
 
 const categorySchema = new mongoose.Schema(
-  {
-    name: {
+{
+   name: {
       type: String,
       required: true,
-      trim: true,
-    },
+   },
 
-    slug: {
+   slug: {
       type: String,
       required: true,
       unique: true,
-    },
+   },
 
-    parent: {
+   parentCategory: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
-      default: null, // null = main category
-    },
+      default: null,
+   },
 
-    image: {
+   image: {
       type: String,
-    },
+   },
 
-    isActive: {
+   level: {
+      type: Number,
+      default: 0,
+   },
+
+   isActive: {
       type: Boolean,
       default: true,
-    },
-  },
-  { timestamps: true }
+   },
+
+},
+{
+   timestamps: true,
+}
 );
 
-export default mongoose.model("Category", categorySchema);
+const Category = mongoose.model("Category", categorySchema);
+
+export default Category;

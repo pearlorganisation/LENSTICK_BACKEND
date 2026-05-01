@@ -1,74 +1,104 @@
 // category.controller.js
 
-import { createCategoryService } from "./category.service.js";
+import { success } from "zod";
+import CustomError from "../../common/utils/customError.js";
+import successResponse from "../../common/utils/sucessResponse.js";
+import { createCategoryService, deleteCategoryService, getAllCategoriesService, getCategoryByIdService, updateCategoryService } from "./category.service.js";
 import { createCategoryValidation } from "./category.validation.js";
 
-export const createCategory = async (req, res) => {
-  try {
-    const { error } = createCategoryValidation.validate(req.body);
 
-    if (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.details[0].message,
-      });
-    }
 
-    // create category
-    const result = await createCategoryService(req.body);
+class CategoryController {
+  static createCategory = async (req,res) =>{
+    try {
+      const { error } = createCategoryValidation.validate(req.body);
 
-    return res.status(201).json({
-      success: true,
-      message: "Category created successfully",
-      data: result,
-    });
+      if(error) {
+        throw new CustomError(res, error.details[0].message, 400);
+      }
+
+ const image = req.file
+      ? {
+          url: req.file.location,
+          key: req.file.key,
+        }
+      : null;
+
+    const payload = {
+      ...req.body,
+      image,
+    };
+
+
+      const result = await createCategoryService(payload);
+
+    return successResponse(res, result, "Category created successfully", 201);
+
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+
+   throw new CustomError(res,error);
+
   }
-};
+}
 
-// category.controller.js
 
-import {
-  getAllCategoriesService,
-  getSingleCategoryService,
-} from "./category.service.js";
-
-// GET ALL CATEGORIES
-export const getAllCategories = async (req, res) => {
+static getAllCategories = async (req, res) => {
+   
   try {
     const result = await getAllCategoriesService();
-
-    return res.status(200).json({
-      success: true,
-      message: "Categories fetched successfully",
-      data: result,
-    });
+    return successResponse(res, result, "categories fetched successfully");
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    throw new CustomError(res, error);
   }
-};
+}
 
-// GET SINGLE CATEGORY
-export const getSingleCategory = async (req, res) => {
+static getCategoryById = async (req, res) => {
   try {
-    const result = await getSingleCategoryService(req.params.id);
-
-    return res.status(200).json({
-      success: true,
-      message: "Category fetched successfully",
-      data: result,
-    });
+    const result = await getCategoryByIdService(req.params.id);
+    return successResponse(res, result , "category fetched successfully");
   } catch (error) {
-    return res.status(404).json({
-      success: false,
-      message: error.message,
-    });
+    throw new CustomError(res, error);
+  }
+
+}
+
+static updateCategory = async (req, res) => {
+  try {
+    // Check validation (optional: you might want a separate updateValidation)
+    const { error } = createCategoryValidation.validate(req.body);
+    if (error) throw new CustomError(res, error.details[0].message, 400);
+
+    const image = req.file
+      ? {
+          url: req.file.location,
+          key: req.file.key,
+        }
+      : undefined; 
+
+    const payload = { ...req.body };
+    if (image) payload.image = image;
+
+    const result = await updateCategoryService(req.params.id, payload);
+    return successResponse(res, result, "Category updated successfully");
+  } catch (error) {
+    throw new CustomError(res, error);
   }
 };
+
+static deleteCategory = async (req, res) => {
+  try {
+    const result = await deleteCategoryService(req.params.id);
+    return successResponse(res, result, "Category deleted successfully");
+  } catch (error) {
+    throw new CustomError(res, error);
+  }
+};
+}
+
+
+
+
+
+export default CategoryController;
+
+

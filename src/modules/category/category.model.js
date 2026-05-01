@@ -19,9 +19,15 @@ const categorySchema = new mongoose.Schema(
       default: null,
    },
 
-   image: {
-      type: String,
-   },
+    image: {
+      url: {
+        type: String,
+      },
+
+      key: {
+        type: String,
+      },
+    },
 
    level: {
       type: Number,

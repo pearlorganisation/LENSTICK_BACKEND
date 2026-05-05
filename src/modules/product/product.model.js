@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-
+import { nanoid } from "nanoid";
 /* =========================
    VARIANT SCHEMA
 ========================= */
@@ -8,8 +8,8 @@ const variantSchema = new mongoose.Schema(
   {
     sku: {
       type: String,
-      required: true,
-      unique: true,
+       unique: true,
+     
       trim: true,
     },
 
@@ -102,9 +102,7 @@ const productSchema = new mongoose.Schema(
       lowercase: true,
     },
 
-    description: {
-      type: String,
-    },
+   
 
     shortDescription: {
       type: String,
@@ -194,10 +192,10 @@ const productSchema = new mongoose.Schema(
       trim: true,
     },
 
-    collection: {
-      type: String,
-      trim: true,
-    },
+   productCollection: {
+  type: String,
+  trim: true,
+},
 
     brand: {
       type: String,
@@ -246,20 +244,42 @@ const productSchema = new mongoose.Schema(
 
 
 
-productSchema.pre("save", async function () {
+// productSchema.pre("save", async function () {
+//   let total = 0;
+
+//   if (this.variants && this.variants.length > 0) {
+//     this.variants.forEach((variant) => {
+//       total += (variant.stock || 0);
+//     });
+//   }
+
+//   this.totalStock = total;
+  
+// });
+
+
+
+productSchema.pre("save", async function () { // <--- Remove 'next' here
   let total = 0;
 
   if (this.variants && this.variants.length > 0) {
-    this.variants.forEach((variant) => {
+    for (const variant of this.variants) {
       total += (variant.stock || 0);
-    });
+
+      if (!variant.sku) {
+        const brandCode = this.brand?.slice(0, 3).toUpperCase() || "PRD";
+        const nameCode = this.name?.slice(0, 3).toUpperCase() || "GEN";
+        const colorCode = variant.frameColor?.slice(0, 3).toUpperCase() || "CLR";
+        const sizeCode = variant.size?.slice(0, 3).toUpperCase() || "NA";
+
+        variant.sku = `${brandCode}-${nameCode}-${colorCode}-${sizeCode}-${nanoid(8)}`;
+      }
+    }
   }
 
   this.totalStock = total;
-  
-});
-
-
+  // No next() call needed here because the function is async
+})
 
 productSchema.index({ name: "text" });
 

@@ -17,15 +17,21 @@ export const createProductService = async (data) => {
 
 
 export const getAllProductsService = async (queryParams) => {
+
+
+
+
+
   const {
     category,
     subCategory,
     brand,
     gender,
     frameShape,
+    frameColor,
     frameMaterial,
     frameType,
-    collection,
+    productCollection,
     size,
     minPrice,
     maxPrice,
@@ -39,6 +45,8 @@ export const getAllProductsService = async (queryParams) => {
     isActive: true,
   };
 
+  const variantMatch = {};
+
   // ✅ Product-level filters
   if (category) matchStage.category = new mongoose.Types.ObjectId(category);
   if (subCategory) matchStage.subCategory = new mongoose.Types.ObjectId(subCategory);
@@ -47,7 +55,7 @@ export const getAllProductsService = async (queryParams) => {
   if (frameShape) matchStage.frameShape = frameShape;
   if (frameMaterial) matchStage.frameMaterial = frameMaterial;
   if (frameType) matchStage.frameType = frameType;
-  if (collection) matchStage.collection = collection;
+  if (productCollection) matchStage.productCollection = productCollection;
 
   if (search) {
     matchStage.$text = { $search: search };
@@ -62,55 +70,117 @@ export const getAllProductsService = async (queryParams) => {
   else if (sort === "oldest") sortStage = { createdAt: 1 };
   else sortStage = { createdAt: -1 };
 
-  const data = await Product.aggregate([
-    
-    // 🔥 Step 1: Product-level filter
-    { $match: matchStage },
+ const data = await Product.aggregate([
+  { $match: matchStage },
 
-    // 🔥 Step 2: Unwind variants
-    { $unwind: "$variants" },
+  { $unwind: "$variants" },
 
-    // 🔥 Step 3: Variant-level filter
-    {
-      $match: {
-        ...(size && { "variants.size": { $in: size.split(",") } }),
+  {
+    $match: variantMatch
+  },
 
-        ...((minPrice || maxPrice) && {
-          "variants.price": {
-            ...(minPrice && { $gte: Number(minPrice) }),
-            ...(maxPrice && { $lte: Number(maxPrice) }),
-          },
-        }),
-      },
-    },
+  {
+    $facet: {
+      totalCount: [
+  {
+    $group: {
+      _id: "$_id"
+    }
+  },
+  {
+    $count: "count"
+  }
+],
+      // ✅ PRODUCTS
+      products: [
+        { $sort: sortStage },
+        {
+          $group: {
+            _id: "$_id",
+            name: { $first: "$name" },
+            brand: { $first: "$brand" },
+            frameShape: { $first: "$frameShape" },
+            frameType: { $first: "$frameType" },
+            variants: { $push: "$variants" }
+          }
+        },
+        { $skip: skip },
+        { $limit: Number(limit) }
+      ],
 
-    // 🔥 Step 4: Sorting
-    { $sort: sortStage },
+      // ✅ BRAND COUNTS
+      brands: [
+        {
+          $group: {
+            _id: "$brand",
+            count: { $sum: 1 }
+          }
+        }
+      ],
 
-    // 🔥 Step 5: Group back to product
-    {
-      $group: {
-        _id: "$_id",
-        name: { $first: "$name" },
-        brand: { $first: "$brand" },
-        frameType: { $first: "$frameType" },
-        frameShape: { $first: "$frameShape" },
-        category: { $first: "$category" },
-        subCategory: { $first: "$subCategory" },
-        variants: { $push: "$variants" },
-        createdAt: { $first: "$createdAt" },
-      },
-    },
+      // ✅ FRAME COLOR COUNTS
+      frameColors: [
+        {
+          $group: {
+            _id: "$variants.frameColor",
+            count: { $sum: 1 }
+          }
+        }
+      ],
 
-    // 🔥 Step 6: Pagination
-    { $skip: skip },
-    { $limit: Number(limit) },
-  ]);
+      // ✅ FRAME SHAPE COUNTS
+      frameShapes: [
+        {
+          $group: {
+            _id: "$frameShape",
+            count: { $sum: 1 }
+          }
+        }
+      ],
 
-  return {
-    products: data,
-    currentPage: Number(page),
-  };
+      // ✅ SIZE COUNTS
+      sizes: [
+        {
+          $group: {
+            _id: "$variants.size",
+            count: { $sum: 1 }
+          }
+        }
+      ],
+
+      // ✅ PRICE RANGE
+      priceRange: [
+        {
+          $group: {
+            _id: null,
+            min: { $min: "$variants.price" },
+            max: { $max: "$variants.price" }
+          }
+        }
+      ]
+    }
+  }
+]);
+
+  const result = data[0];
+
+  const totalProducts = result.totalCount[0]?.count || 0;
+
+return {
+  products: result.products,
+  filters: {
+    brands: result.brands,
+    frameColors: result.frameColors,
+    frameShapes: result.frameShapes,
+    sizes: result.sizes,
+    priceRange: result.priceRange,
+  },
+  currentPage: Number(page),
+
+  // ✅ ADDED PAGINATION
+  totalPages: Math.ceil(totalProducts / Number(limit)),
+  totalProducts,
+};
 };
 
 /* =========================================
@@ -128,10 +198,19 @@ export const getProductByIdService = async (id) => {
 ========================================= */
 
 export const updateProductService = async (id, data) => {
-  return await Product.findByIdAndUpdate(id, data, {
-    new: true,
-    runValidators: true,
-  });
+  const product = await Product.findById(id);
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  // Merge incoming data into existing product
+  Object.assign(product, data);
+
+  // 🔥 This triggers pre("save") hook
+  await product.save();
+
+  return product;
 };
 
 /* =========================================

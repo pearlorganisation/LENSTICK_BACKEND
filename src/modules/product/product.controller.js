@@ -17,14 +17,21 @@ class ProductController {
       const product = await createProductService(req.body);
       return successResponse(res, product, "Product created successfully", 201);
     } catch (error) {
+       console.error("DETAILED ERROR:", error); 
       return next(
   new CustomError(error?.message || "Something went wrong", error?.statusCode || 500)
 );
     }
   }
 
+  
+
   static async getAllProducts(req, res, next) {
+
     try {
+
+      const { page = 1, limit = 10 } = req.query;
+      
       const data = await getAllProductsService(req.query);
       return successResponse(res, data, "Products fetched successfully");
     } catch (error) {

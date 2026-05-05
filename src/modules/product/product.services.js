@@ -58,9 +58,7 @@ export const getAllProductsService = async (queryParams) => {
      VARIANT FILTERS
   ========================================= */
 
-  if (color) {
-    query["variants.color"] = color;
-  }
+  
 
   if (size) {
     query["variants.size"] = size;

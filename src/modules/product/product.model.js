@@ -6,7 +6,6 @@ import mongoose from "mongoose";
 
 const variantSchema = new mongoose.Schema(
   {
-    // Unique SKU for inventory management
     sku: {
       type: String,
       required: true,
@@ -14,34 +13,21 @@ const variantSchema = new mongoose.Schema(
       trim: true,
     },
 
-    /* =========================
-       VARIANT ATTRIBUTES
-    ========================= */
-
-   
-
-    // Example: Matte_Black_with_Gold
     frameColor: {
       type: String,
       required: true,
       trim: true,
     },
 
-    // Example: Small, Medium, Large
     size: {
       type: String,
       enum: ["EXTRA SMALL", "SMALL", "MEDIUM", "LARGE", "EXTRA LARGE"],
     },
 
-    // Example: 2-5 YEARS
     ageGroup: {
       type: String,
       trim: true,
     },
-
-    /* =========================
-       PRICING
-    ========================= */
 
     price: {
       type: Number,
@@ -57,10 +43,6 @@ const variantSchema = new mongoose.Schema(
       default: 0,
     },
 
-    /* =========================
-       STOCK MANAGEMENT
-    ========================= */
-
     stock: {
       type: Number,
       required: true,
@@ -71,10 +53,6 @@ const variantSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-
-    /* =========================
-       VARIANT IMAGES
-    ========================= */
 
     images: [
       {
@@ -107,15 +85,9 @@ const variantSchema = new mongoose.Schema(
   }
 );
 
-/* =========================
-   MAIN PRODUCT SCHEMA
-========================= */
-
 const productSchema = new mongoose.Schema(
   {
-    /* =========================
-       BASIC INFORMATION
-    ========================= */
+   
 
     name: {
       type: String,
@@ -138,9 +110,7 @@ const productSchema = new mongoose.Schema(
       type: String,
     },
 
-    /* =========================
-       CATEGORY
-    ========================= */
+   
 
     category: {
       type: mongoose.Schema.Types.ObjectId,
@@ -153,9 +123,30 @@ const productSchema = new mongoose.Schema(
       ref: "SubCategory",
     },
 
-    /* =========================
-       PRODUCT FILTERS
-    ========================= */
+    description: {
+      type: String,
+      trim: true,
+    },
+
+    returnPolicy: {
+      type: String,
+      trim: true,
+    },
+
+    questionsAndAnswers: [
+      {
+        question: {
+          type: String,
+          trim: true,
+        },
+        answer: {
+          type: String,
+          trim: true,
+        },
+      },
+    ],
+
+   
 
     gender: [
       {
@@ -163,6 +154,25 @@ const productSchema = new mongoose.Schema(
         enum: ["Men", "Women", "Kids"],
       },
     ],
+
+    frameDimensions: {
+      lensWidth: {
+        type: Number,
+        required: false,
+      },
+      bridgeWidth: {
+        type: Number,
+        required: false,
+      },
+      templeLength: {
+        type: Number,
+        required: false,
+      },
+      lensHeight: {
+        type: Number,
+        required: false,
+      },
+    },
 
     productType: {
       type: String,
@@ -194,55 +204,15 @@ const productSchema = new mongoose.Schema(
       trim: true,
     },
 
-    /* =========================
-       PRODUCT TAGS
-    ========================= */
-
     tags: [String],
-
-    /* =========================
-       FEATURES
-    ========================= */
 
     features: [String],
 
-    /* =========================
-       VARIANTS
-    ========================= */
+   
 
     variants: [variantSchema],
 
-    /* =========================
-       SEO
-    ========================= */
-
-    metaTitle: {
-      type: String,
-    },
-
-    metaDescription: {
-      type: String,
-    },
-
-    metaKeywords: [String],
-
-    /* =========================
-       RATINGS
-    ========================= */
-
-    averageRating: {
-      type: Number,
-      default: 0,
-    },
-
-    totalReviews: {
-      type: Number,
-      default: 0,
-    },
-
-    /* =========================
-       PRODUCT STATUS
-    ========================= */
+   
 
     isFeatured: {
       type: Boolean,
@@ -264,11 +234,6 @@ const productSchema = new mongoose.Schema(
       default: true,
     },
 
-    /* =========================
-       TOTAL STOCK
-       (AUTO CALCULATED)
-    ========================= */
-
     totalStock: {
       type: Number,
       default: 0,
@@ -279,25 +244,22 @@ const productSchema = new mongoose.Schema(
   }
 );
 
-/* =========================
-   AUTO CALCULATE TOTAL STOCK
-========================= */
 
-productSchema.pre("save", function (next) {
+
+productSchema.pre("save", async function () {
   let total = 0;
 
-  this.variants.forEach((variant) => {
-    total += variant.stock;
-  });
+  if (this.variants && this.variants.length > 0) {
+    this.variants.forEach((variant) => {
+      total += (variant.stock || 0);
+    });
+  }
 
   this.totalStock = total;
-
-  next();
+  
 });
 
-/* =========================
-   INDEXING
-========================= */
+
 
 productSchema.index({ name: "text" });
 

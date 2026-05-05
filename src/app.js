@@ -4,11 +4,14 @@ import notFound from "./common/middleware/notFound.js";
 import errorHandler from "./common/middleware/errorHandler.js";
 import successResponse from "./common/utils/sucessResponse.js";
 import cookieParser from "cookie-parser";
-import corsConfig from "./config/corsConfig.js";
+
 import routes from "./routes.js";
 import { connectRedis } from "./config/redis.js";
 import redis from "./config/redis.js";
 import connectToMongoDB from "./config/db.js";
+
+import corsConfig from "./config/corsConfig.js";
+
 
 const app = express();
 

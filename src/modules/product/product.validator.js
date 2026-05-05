@@ -38,7 +38,7 @@ export const createProductValidation = Joi.object({
       Joi.object({
         sku: Joi.string().required(),
 
-        color: Joi.string().required(),
+        
 
         frameColor: Joi.string().required(),
 

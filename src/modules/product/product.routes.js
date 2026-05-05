@@ -2,25 +2,19 @@
 
 import express from "express";
 import ProductController from "./product.controller.js";
+import isAuthenticated from "../../common/middleware/auth/isAuthenticated.js";
+import authorizeRoles from "../../common/middleware/auth/authorizeRoles.js";
 
-import { upload } from "../../common/middleware/upload.middleware.js";
-import S3Service from "../../common/utils/commonService/awsS3.service.js";
+
 
 const router = express.Router();
 
-router.post("/create", ProductController.createProduct);
-
-router.get("/all", ProductController.getAllProducts);
-
-router.get("/filters", ProductController.getProductFilters);
-
-router.get("/:id", ProductController.getProductById);
-
-router.put("/update/:id", ProductController.updateProduct);
-
-router.delete("/delete/:id", ProductController.deleteProduct);
-
-router.put("/update-stock/:productId/:variantId", ProductController.updateVariantStock);
+router.post("/create", isAuthenticated, authorizeRoles("ADMIN"), (req, res, next) => ProductController.createProduct(req, res, next));
+router.get("/all",  (req, res, next) => ProductController.getAllProducts(req, res, next));
+router.get("/filters", isAuthenticated, authorizeRoles("ADMIN"), (req, res, next) => ProductController.getProductFilters(req, res, next));
+router.get("/:id", (req, res, next) => ProductController.getProductById(req, res, next));
+router.put("/update/:id", isAuthenticated, authorizeRoles("ADMIN"), (req, res, next) => ProductController.updateProduct(req, res, next));
+router.delete("/delete/:id", isAuthenticated, authorizeRoles("ADMIN"), (req, res, next) => ProductController.deleteProduct(req, res, next));
+router.put("/update-stock/:productId/:variantId", isAuthenticated, authorizeRoles("ADMIN"), (req, res, next) => ProductController.updateVariantStock(req, res, next));
 
 export default router;
-

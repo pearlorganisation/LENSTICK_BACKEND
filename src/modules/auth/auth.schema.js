@@ -21,10 +21,14 @@ class authSchema {
       email: z.string().email().optional(),
       phoneNumber: z.string().min(10).max(15).optional(),
     })
-    .refine((data) => data.email || data.phoneNumber, {
-      message: "Either email or phone number is required",
-      path: ["email"],
-    });
+    .refine(
+      (data) =>
+        (data.email && !data.phoneNumber) || (!data.email && data.phoneNumber),
+      {
+        message: "Provide either email OR phone number, not both",
+        path: ["email"],
+      }
+    );
 
   static verifyOtp = z
     .object({

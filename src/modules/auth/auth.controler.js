@@ -129,6 +129,8 @@ class AuthController {
       ? await UserService.findByEmail(email)
       : await UserService.findByPhoneNumber(phoneNumber);
 
+    console.log("user result ", userResult);
+
     const user = userResult?.data?.user;
 
     if (!user) {
@@ -184,6 +186,7 @@ class AuthController {
   });
 
   static login = asyncHandler(async (req, res) => {
+    console.log("login called ");
     const { email, phoneNumber } = req.body;
 
     if (!email && !phoneNumber) {
@@ -221,8 +224,8 @@ class AuthController {
   });
 
   static logout = asyncHandler(async (req, res) => {
-    console.log("user ", req.user);
-    const userId = req.user.id;
+    // console.log("user ", req.user);
+    // const userId = req.user.id;
     // await redis.del(`refresh:${userId}`);
 
     res.clearCookie("accessToken");
@@ -307,6 +310,34 @@ class AuthController {
     // Success response
     return successResponse(res, user, "Google authentication successful", 200);
   };
+
+  static resendOtp = asyncHandler(async (req, res, next) => {
+    const { email, type } = req.body;
+
+    if (!email || !type) {
+      return next(new CustomError("Email and type are required", 400));
+    }
+
+    const user = await UserService.findByEmail({ email });
+    if (!user) {
+      throw new CustomError("User not found", 400);
+    }
+
+    const otp = generateOTP();
+    console.log("regenerated otp", otp);
+
+    await OTP.findOneAndReplace(
+      { email, type },
+      { email, otp, type },
+      { upsert: true, new: true }
+    );
+
+    console.log("otp in resend  ", otp);
+
+    await sendOtpEmail(user.name, email, otp, type);
+
+    return successResponse(res, 200, "OTP resent successfully");
+  });
 }
 
 export default AuthController;

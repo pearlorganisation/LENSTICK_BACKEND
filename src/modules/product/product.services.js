@@ -14,6 +14,8 @@ export const createProductService = async (data) => {
    GET ALL PRODUCTS
 ========================================= */
 
+
+
 export const getAllProductsService = async (queryParams) => {
   const {
     category,
@@ -24,7 +26,6 @@ export const getAllProductsService = async (queryParams) => {
     frameMaterial,
     frameType,
     collection,
-    color,
     size,
     minPrice,
     maxPrice,
@@ -34,109 +35,81 @@ export const getAllProductsService = async (queryParams) => {
     sort = "latest",
   } = queryParams;
 
-  const query = {
+  const matchStage = {
     isActive: true,
   };
 
-  if (category) query.category = category;
-
-  if (subCategory) query.subCategory = subCategory;
-
-  if (brand) query.brand = brand;
-
-  if (gender) query.gender = gender;
-
-  if (frameShape) query.frameShape = frameShape;
-
-  if (frameMaterial) query.frameMaterial = frameMaterial;
-
-  if (frameType) query.frameType = frameType;
-
-  if (collection) query.collection = collection;
-
-  /* =========================================
-     VARIANT FILTERS
-  ========================================= */
-
-  
-
-  if (size) {
-    query["variants.size"] = size;
-  }
-
-  /* =========================================
-     PRICE FILTER
-  ========================================= */
-
-  if (minPrice || maxPrice) {
-    query["variants.price"] = {};
-
-    if (minPrice) {
-      query["variants.price"].$gte = Number(minPrice);
-    }
-
-    if (maxPrice) {
-      query["variants.price"].$lte = Number(maxPrice);
-    }
-  }
-
-  /* =========================================
-     SEARCH
-  ========================================= */
+  // ✅ Product-level filters
+  if (category) matchStage.category = new mongoose.Types.ObjectId(category);
+  if (subCategory) matchStage.subCategory = new mongoose.Types.ObjectId(subCategory);
+  if (brand) matchStage.brand = { $in: brand.split(",") };
+  if (gender) matchStage.gender = { $in: gender.split(",") };
+  if (frameShape) matchStage.frameShape = frameShape;
+  if (frameMaterial) matchStage.frameMaterial = frameMaterial;
+  if (frameType) matchStage.frameType = frameType;
+  if (collection) matchStage.collection = collection;
 
   if (search) {
-    query.$text = {
-      $search: search,
-    };
-  }
-
-  /* =========================================
-     SORTING
-  ========================================= */
-
-  let sortOption = {};
-
-  switch (sort) {
-    case "priceLowToHigh":
-      sortOption = {
-        "variants.price": 1,
-      };
-      break;
-
-    case "priceHighToLow":
-      sortOption = {
-        "variants.price": -1,
-      };
-      break;
-
-    case "oldest":
-      sortOption = {
-        createdAt: 1,
-      };
-      break;
-
-    default:
-      sortOption = {
-        createdAt: -1,
-      };
+    matchStage.$text = { $search: search };
   }
 
   const skip = (Number(page) - 1) * Number(limit);
 
-  const products = await Product.find(query)
-    .populate("category")
-    .populate("subCategory")
-    .sort(sortOption)
-    .skip(skip)
-    .limit(Number(limit));
+  // ✅ Sorting
+  let sortStage = {};
+  if (sort === "priceLowToHigh") sortStage = { "variants.price": 1 };
+  else if (sort === "priceHighToLow") sortStage = { "variants.price": -1 };
+  else if (sort === "oldest") sortStage = { createdAt: 1 };
+  else sortStage = { createdAt: -1 };
 
-  const totalProducts = await Product.countDocuments(query);
+  const data = await Product.aggregate([
+    
+    // 🔥 Step 1: Product-level filter
+    { $match: matchStage },
+
+    // 🔥 Step 2: Unwind variants
+    { $unwind: "$variants" },
+
+    // 🔥 Step 3: Variant-level filter
+    {
+      $match: {
+        ...(size && { "variants.size": { $in: size.split(",") } }),
+
+        ...((minPrice || maxPrice) && {
+          "variants.price": {
+            ...(minPrice && { $gte: Number(minPrice) }),
+            ...(maxPrice && { $lte: Number(maxPrice) }),
+          },
+        }),
+      },
+    },
+
+    // 🔥 Step 4: Sorting
+    { $sort: sortStage },
+
+    // 🔥 Step 5: Group back to product
+    {
+      $group: {
+        _id: "$_id",
+        name: { $first: "$name" },
+        brand: { $first: "$brand" },
+        frameType: { $first: "$frameType" },
+        frameShape: { $first: "$frameShape" },
+        category: { $first: "$category" },
+        subCategory: { $first: "$subCategory" },
+        variants: { $push: "$variants" },
+        createdAt: { $first: "$createdAt" },
+      },
+    },
+
+    // 🔥 Step 6: Pagination
+    { $skip: skip },
+    { $limit: Number(limit) },
+  ]);
 
   return {
-    products,
-    totalProducts,
+    products: data,
     currentPage: Number(page),
-    totalPages: Math.ceil(totalProducts / limit),
   };
 };
 
@@ -201,46 +174,58 @@ export const updateVariantStockService = async (
    GET FILTER COUNTS
 ========================================= */
 
-export const getProductFiltersService = async () => {
-  const colors = await Product.aggregate([
+export const getProductFiltersService = async (queryParams) => {
+  const { category } = queryParams;
+
+  return await Product.aggregate([
     {
-      $unwind: "$variants",
+      $match: {
+        category: new mongoose.Types.ObjectId(category),
+        isActive: true,
+      },
     },
+
+    { $unwind: "$variants" },
+
     {
-      $group: {
-        _id: "$variants.color",
-        count: {
-          $sum: "$variants.stock",
-        },
+      $facet: {
+        sizes: [
+          {
+            $group: {
+              _id: "$variants.size",
+              count: { $sum: 1 },
+            },
+          },
+        ],
+
+        brands: [
+          {
+            $group: {
+              _id: "$brand",
+              count: { $sum: 1 },
+            },
+          },
+        ],
+
+        frameShapes: [
+          {
+            $group: {
+              _id: "$frameShape",
+              count: { $sum: 1 },
+            },
+          },
+        ],
+
+        priceRange: [
+          {
+            $group: {
+              _id: null,
+              min: { $min: "$variants.price" },
+              max: { $max: "$variants.price" },
+            },
+          },
+        ],
       },
     },
   ]);
-
-  const frameShapes = await Product.aggregate([
-    {
-      $group: {
-        _id: "$frameShape",
-        count: {
-          $sum: 1,
-        },
-      },
-    },
-  ]);
-
-  const brands = await Product.aggregate([
-    {
-      $group: {
-        _id: "$brand",
-        count: {
-          $sum: 1,
-        },
-      },
-    },
-  ]);
-
-  return {
-    colors,
-    frameShapes,
-    brands,
-  };
 };
